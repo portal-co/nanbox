@@ -5,7 +5,8 @@ use core::{f64, marker::PhantomData, mem::take, ptr::NonNull};
 use alloc::{boxed::Box, collections::btree_map::BTreeMap};
 use spin::Mutex;
 extern crate alloc;
-static NANS: spin::Mutex<BTreeMap<u32, Entry>> = Mutex::new(BTreeMap::new());
+const MASK: u64 = 0xffffffff;
+static NANS: spin::Mutex<BTreeMap<u64, Entry>> = Mutex::new(BTreeMap::new());
 enum Entry {
     F64 { float: f64, refc: usize },
     Ptr(NonNull<()>),
@@ -30,7 +31,7 @@ impl<T> NanBox<T> {
             let b = a.to_bits();
             unsafe {
                 Self {
-                    raw_u64: (b & !0xffffffff) | (i as u64),
+                    raw_u64: (b & !MASK) | (i as u64),
                 }
             }
         } else {
@@ -42,8 +43,9 @@ impl<T> NanBox<T> {
             if !self.raw.is_nan() {
                 return Some(self.raw);
             };
-            let i = self.raw_u64 & 0xffffffff;
-            i as u32
+            let i = self.raw_u64 & MASK;
+            // i as u32
+            i
         };
         let mut l = NANS.lock();
         let Entry::F64 { float, .. } = l.get(&i)? else {
@@ -64,7 +66,7 @@ impl<T> NanBox<T> {
         let b = f64::NAN.to_bits();
         unsafe {
             Self {
-                raw_u64: (b & !0xffffffff) | (i as u64),
+                raw_u64: (b & !MASK) | (i as u64),
             }
         }
     }
@@ -73,8 +75,9 @@ impl<T> NanBox<T> {
             if !self.raw.is_nan() {
                 return None;
             };
-            let i = self.raw_u64 & 0xffffffff;
-            i as u32
+            let i = self.raw_u64 & MASK;
+            // i as u32
+            i
         };
         let mut l = NANS.lock();
         let Entry::Ptr(p) = l.get(&i)? else {
@@ -87,8 +90,9 @@ impl<T> NanBox<T> {
             if !self.raw.is_nan() {
                 return None;
             };
-            let i = self.raw_u64 & 0xffffffff;
-            i as u32
+            let i = self.raw_u64 & MASK;
+            // i as u32
+            i
         };
         let mut l = NANS.lock();
         let Entry::Ptr(p) = l.get(&i)? else {
@@ -104,7 +108,7 @@ impl<T> NanBox<T> {
             };
             return Err(self);
         };
-        let i = (r & 0xffffffff) as u32;
+        let i = (r & MASK);
         let mut l = NANS.lock();
         let p = match l.remove(&i) {
             Some(Entry::Ptr(p)) => p,
@@ -136,8 +140,9 @@ impl<T: Clone> Clone for NanBox<T> {
     fn clone(&self) -> Self {
         if unsafe { self.raw }.is_nan() {
             let i = {
-                let i = unsafe { self.raw_u64 } & 0xffffffff;
-                i as u32
+                let i = unsafe { self.raw_u64 } & MASK;
+                // i as u32
+                i
             };
             let mut l = NANS.lock();
             match l.get_mut(&i) {
@@ -172,8 +177,9 @@ impl<T> Drop for NanBox<T> {
                 if !self.raw.is_nan() {
                     return;
                 };
-                let i = self.raw_u64 & 0xffffffff;
-                i as u32
+                let i = self.raw_u64 & MASK;
+                // i as u32
+                i
             };
             let mut l = NANS.lock();
             let Some(e) = l.remove(&i) else {
