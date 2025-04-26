@@ -233,6 +233,22 @@ impl<T> Drop for NanBox<T> {
         };
     }
 }
+impl<T: Future> Future for NanBox<T> {
+    type Output = Option<T::Output>;
+
+    fn poll(
+        self: Pin<&mut Self>,
+        cx: &mut core::task::Context<'_>,
+    ) -> core::task::Poll<Self::Output> {
+        match unsafe { self.get_unchecked_mut() }.as_pin_mut() {
+            None => core::task::Poll::Ready(None),
+            Some(i) => {
+                let i = i.poll(cx);
+                i.map(Some)
+            }
+        }
+    }
+}
 #[cfg(feature = "dumpster")]
 const _: () = {
     unsafe impl<T: dumpster::Trace> dumpster::Trace for NanBox<T> {
