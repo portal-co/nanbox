@@ -1,6 +1,6 @@
 #![no_std]
 
-use core::{f64, marker::PhantomData, mem::take, ptr::NonNull};
+use core::{f64, marker::PhantomData, mem::take, pin::Pin, ptr::NonNull};
 
 use alloc::{boxed::Box, collections::btree_map::BTreeMap};
 use spin::Mutex;
@@ -99,6 +99,36 @@ impl<T> NanBox<T> {
             return None;
         };
         Some(unsafe { p.cast().as_mut() })
+    }
+    pub fn as_pin_ref(&self) -> Option<Pin<&T>> {
+        let i = unsafe {
+            if !self.raw.is_nan() {
+                return None;
+            };
+            let i = self.raw_u64 & MASK;
+            // i as u32
+            i
+        };
+        let mut l = NANS.lock();
+        let Entry::Ptr(p) = l.get(&i)? else {
+            return None;
+        };
+        Some(unsafe { Pin::new_unchecked(p.cast().as_ref()) })
+    }
+    pub fn as_pin_mut(&mut self) -> Option<Pin<&mut T>> {
+        let i = unsafe {
+            if !self.raw.is_nan() {
+                return None;
+            };
+            let i = self.raw_u64 & MASK;
+            // i as u32
+            i
+        };
+        let mut l = NANS.lock();
+        let Entry::Ptr(p) = l.get(&i)? else {
+            return None;
+        };
+        Some(unsafe { Pin::new_unchecked(p.cast().as_mut()) })
     }
     pub fn into_inner(mut self) -> Result<T, Self> {
         let r = take(unsafe { &mut self.raw_u64 });
