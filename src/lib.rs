@@ -100,7 +100,7 @@ impl<T> NanBox<T> {
         };
         Some(unsafe { p.cast().as_mut() })
     }
-    pub fn as_pin_ref(self: Pin<&Self>) -> Option<Pin<&T>> {
+    pub fn as_pin_ref(&self) -> Option<Pin<&T>> {
         let i = unsafe {
             if !self.raw.is_nan() {
                 return None;
