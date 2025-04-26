@@ -100,7 +100,7 @@ impl<T> NanBox<T> {
         };
         Some(unsafe { p.cast().as_mut() })
     }
-    pub fn as_pin_ref(&self) -> Option<Pin<&T>> {
+    pub fn as_pin_ref(self: Pin<&Self>) -> Option<Pin<&T>> {
         let i = unsafe {
             if !self.raw.is_nan() {
                 return None;
@@ -115,7 +115,7 @@ impl<T> NanBox<T> {
         };
         Some(unsafe { Pin::new_unchecked(p.cast().as_ref()) })
     }
-    pub fn as_pin_mut(&mut self) -> Option<Pin<&mut T>> {
+    pub fn as_pin_mut(self: Pin<&mut Self>) -> Option<Pin<&mut T>> {
         let i = unsafe {
             if !self.raw.is_nan() {
                 return None;
@@ -130,12 +130,7 @@ impl<T> NanBox<T> {
         };
         Some(unsafe { Pin::new_unchecked(p.cast().as_mut()) })
     }
-    pub fn from_pin(self: Pin<&mut Self>) -> &mut Self{
-        //SAFETY: only holds a handle
-        unsafe{
-            self.get_unchecked_mut()
-        }
-    }
+
     pub fn into_inner(mut self) -> Result<T, Self> {
         let r = take(unsafe { &mut self.raw_u64 });
         if !f64::from_bits(r).is_nan() {
@@ -246,7 +241,7 @@ impl<T: Future> Future for NanBox<T> {
         self: Pin<&mut Self>,
         cx: &mut core::task::Context<'_>,
     ) -> core::task::Poll<Self::Output> {
-        match unsafe { self.get_unchecked_mut() }.as_pin_mut() {
+        match self.as_pin_mut() {
             None => core::task::Poll::Ready(None),
             Some(i) => {
                 let i = i.poll(cx);
