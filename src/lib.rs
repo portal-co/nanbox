@@ -130,6 +130,12 @@ impl<T> NanBox<T> {
         };
         Some(unsafe { Pin::new_unchecked(p.cast().as_mut()) })
     }
+    pub fn from_pin(self: Pin<&mut Self>) -> &mut Self{
+        //SAFETY: only holds a handle
+        unsafe{
+            self.get_unchecked_mut()
+        }
+    }
     pub fn into_inner(mut self) -> Result<T, Self> {
         let r = take(unsafe { &mut self.raw_u64 });
         if !f64::from_bits(r).is_nan() {
