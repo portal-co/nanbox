@@ -5,7 +5,7 @@ use core::{f64, marker::PhantomData, mem::take, ptr::NonNull};
 use alloc::{boxed::Box, collections::btree_map::BTreeMap};
 use spin::Mutex;
 extern crate alloc;
-const MASK: u64 = 0xffffffff;
+const MASK: u64 = 0xffff_ffff_ffff;
 static NANS: spin::Mutex<BTreeMap<u64, Entry>> = Mutex::new(BTreeMap::new());
 enum Entry {
     F64 { float: f64, refc: usize },
