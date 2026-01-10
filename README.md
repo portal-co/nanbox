@@ -1,13 +1,14 @@
 # nanbox
 
 ## Description
-Project nanbox
+"Another NaN boxer" (`nanbox2`). A utility for NaN boxing values, useful for dynamic language runtimes.
 
 ## Goals
-- [ ] Add project goals
+- [ ] Implement efficient NaN boxing
+- [ ] Support `no_std` environments
 
 ## Progress
-- [ ] Initial setup
+- [ ] Crate initialized
 
 ---
 *AI assisted*
